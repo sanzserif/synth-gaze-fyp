@@ -2,23 +2,14 @@
 
 An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 model to predict where a user is looking based on webcam images or uploaded photos.
 
-## 🏗️ Architecture
+## Architecture
 
 - **Frontend:** Next.js 14 (App Router) with TypeScript
 - **Backend:** Python FastAPI with PyTorch
 - **Deployment:** Vercel (hybrid Next.js + Python)
 - **Model:** ResNet18 with custom head (outputs X, Y coordinates)
 
-## ✨ Features
-
-- 📹 Real-time webcam capture
-- 📁 Image upload support
-- 🎯 Gaze visualization on simulated 1920×1080 screen
-- 🎨 Modern glassmorphism UI with dark theme
-- ⚡ Fast inference with PyTorch
-- 🔄 Dual input modes (webcam/upload)
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -36,7 +27,7 @@ An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 mod
 2. **Create a virtual environment:**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   venv\Scripts\activate
    ```
 
 3. **Install dependencies:**
@@ -59,7 +50,7 @@ An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 mod
 
 1. **Navigate to project root:**
    ```bash
-   cd ..  # If you're in backend/
+   cd ..
    ```
 
 2. **Install dependencies:**
@@ -92,104 +83,7 @@ An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 mod
 4. Click **"Capture & Analyze"** or upload an image
 5. View the predicted gaze point on the visualization screen
 
-## 📦 Deployment to Vercel
-
-### Important: PyTorch Size Considerations
-
-⚠️ **PyTorch is large (~700MB+)** and may exceed Vercel's 250MB serverless function limit. Here are your options:
-
-#### Option 1: CPU-Only PyTorch (Default in requirements.txt)
-
-The `requirements.txt` uses CPU-only PyTorch to reduce size:
-```
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.2+cpu
-torchvision==0.16.2+cpu
-```
-
-This reduces the package size significantly but may still exceed limits.
-
-#### Option 2: Convert to ONNX (Recommended for Vercel)
-
-Convert your PyTorch model to ONNX format for a much lighter runtime:
-
-```python
-import torch
-import torch.onnx
-from torchvision import models
-import torch.nn as nn
-
-# Load your model
-model = models.resnet18(weights=None)
-model.fc = nn.Linear(512, 2)
-model.load_state_dict(torch.load('gaze_model.pth'))
-model.eval()
-
-# Create dummy input
-dummy_input = torch.randn(1, 3, 64, 64)
-
-# Export to ONNX
-torch.onnx.export(
-    model,
-    dummy_input,
-    "gaze_model.onnx",
-    export_params=True,
-    opset_version=11,
-    input_names=['input'],
-    output_names=['output']
-)
-```
-
-Then modify `requirements.txt`:
-```
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
-pydantic==2.5.3
-Pillow==10.2.0
-onnxruntime==1.16.3  # Much smaller (~50MB)
-numpy==1.24.3
-```
-
-And update `main.py` to use ONNX Runtime instead of PyTorch.
-
-#### Option 3: Separate Backend Deployment
-
-Deploy the backend separately on platforms that support larger dependencies:
-
-- **Railway:** Great for Python apps, generous limits
-- **Render:** Free tier available, good for ML models
-- **AWS Lambda with Layers:** Can handle PyTorch with custom layers
-- **Google Cloud Run:** Supports containers, no size limits
-- **Fly.io:** Container-based deployment
-
-Then update `NEXT_PUBLIC_API_URL` in Vercel environment variables to point to your backend URL.
-
-### Deploy to Vercel (Attempt with PyTorch)
-
-1. **Install Vercel CLI:**
-   ```bash
-   npm i -g vercel
-   ```
-
-2. **Ensure model file is in place:**
-   ```bash
-   # Model should be at: backend/gaze_model.pth
-   ```
-
-3. **Deploy:**
-   ```bash
-   vercel
-   ```
-
-4. **Set environment variables in Vercel dashboard:**
-   - `NEXT_PUBLIC_API_URL=/api`
-
-5. **Monitor deployment:**
-   - Check for size limit errors
-   - If deployment fails due to size, use Option 2 or 3 above
-
-## 🔧 API Endpoints
+## API Endpoints
 
 ### `GET /`
 Health check endpoint
@@ -244,7 +138,7 @@ Send base64-encoded image and get gaze prediction
 }
 ```
 
-## 🛠️ Model Requirements
+## Model Requirements
 
 Your `gaze_model.pth` file must:
 - Be a ResNet18 architecture
@@ -253,7 +147,7 @@ Your `gaze_model.pth` file must:
 - Accept input images of size 64×64×3
 - Be trained with ImageNet normalization
 
-## 🎨 Customization
+## Customization
 
 ### Adjust Visualization Coordinates
 
@@ -286,14 +180,14 @@ Edit CSS variables in `app/globals.css`:
 }
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Backend Issues
 
 **Model not loading:**
 - Ensure `gaze_model.pth` is in `backend/` directory
 - Check model architecture matches (ResNet18 with fc = Linear(512, 2))
-- Verify Python version is 3.10+
+- Verify Python version is 3.12
 
 **Import errors:**
 - Activate virtual environment
@@ -323,11 +217,11 @@ Edit CSS variables in `app/globals.css`:
 - Ensure `/api/*` routes to Python backend
 - Verify backend file is at `backend/main.py`
 
-## 📝 License
+## License
 
 MIT License - feel free to use this project for your own purposes.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - PyTorch team for the amazing ML framework
 - Next.js team for the excellent React framework
@@ -335,4 +229,4 @@ MIT License - feel free to use this project for your own purposes.
 
 ---
 
-Built with ❤️ using PyTorch, FastAPI, and Next.js
+Built with ❤️ using PyTorch, FastAPI, and Next.js by Nipun Kariyawasam

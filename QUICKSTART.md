@@ -60,9 +60,6 @@ npm i -g vercel
 # Deploy
 vercel
 ```
-
-> **Note:** PyTorch may exceed Vercel's 250MB limit. See [README.md](file:///d:/projects/academical/synthetic_core_fyp/README.md) for alternative deployment options (ONNX conversion or separate backend hosting).
-
 ---
 
 ## 📖 Full Documentation

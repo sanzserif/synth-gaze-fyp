@@ -1,11 +1,5 @@
 """
 Convert PyTorch gaze model (.pth) to ONNX format (.onnx)
-
-Run this script locally before deploying to Vercel:
-    python convert_to_onnx.py
-
-Requires PyTorch (install locally, not needed on Vercel):
-    pip install torch torchvision
 """
 
 import torch
@@ -20,7 +14,6 @@ def convert():
 
     if not model_path.exists():
         print(f"✗ Error: {model_path} not found.")
-        print("  Place your gaze_model.pth in this directory first.")
         return
 
     print(f"Loading model from {model_path}...")
@@ -65,7 +58,6 @@ def convert():
     print(f"  Output: {output_path}")
     print(f"  Size: {output_path.stat().st_size / 1024 / 1024:.1f} MB")
     print(f"  Test prediction: x={result[0][0][0]:.4f}, y={result[0][0][1]:.4f}")
-
-
+    
 if __name__ == "__main__":
     convert()

@@ -1,4 +1,0 @@
-# Place your gaze_model.pth file here
-# The model should be a ResNet18 with modified fc layer: nn.Linear(512, 2)
-
-# This file is gitignored - you need to add the model manually

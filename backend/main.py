@@ -1,6 +1,6 @@
 """
 FastAPI backend for Eye Gaze Tracker
-Uses ONNX Runtime for inference (lightweight alternative to PyTorch)
+Uses ONNX Runtime for inference
 """
 
 import io
@@ -21,7 +21,7 @@ app = FastAPI(title="Eye Gaze Tracker API", root_path="/api")
 # Configure CORS for Vercel frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your Vercel domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,10 +37,9 @@ STD = np.array([0.229, 0.224, 0.225], dtype=np.float32).reshape(3, 1, 1)
 # Global model variable
 model = None
 
-
 class Base64ImageRequest(BaseModel):
     """Request model for base64 encoded images"""
-    image: str  # Base64 encoded image string
+    image: str
 
 
 class PredictionResponse(BaseModel):
@@ -56,7 +55,6 @@ def load_model():
     if not MODEL_PATH.exists():
         raise FileNotFoundError(
             f"Model file not found at {MODEL_PATH}. "
-            "Please run convert_to_onnx.py first to convert your gaze_model.pth"
         )
 
     model = ort.InferenceSession(str(MODEL_PATH))
@@ -70,7 +68,6 @@ async def startup_event():
         load_model()
     except Exception as e:
         print(f"⚠ Warning: Failed to load model: {e}")
-        print("API will start but predictions will fail until model is available.")
 
 
 @app.get("/")
@@ -98,7 +95,6 @@ async def health():
 def preprocess_image(image: Image.Image) -> np.ndarray:
     """
     Preprocess image for model inference using numpy/PIL only
-
     Pipeline: Resize 64x64 -> Grayscale (3ch) -> ToTensor -> Normalize
     """
     # Resize to 64x64
@@ -168,7 +164,6 @@ async def predict_from_base64(request: Base64ImageRequest):
     Predict gaze coordinates from base64 encoded image
     """
     try:
-        # Remove data URL prefix if present
         image_data = request.image
         if ',' in image_data:
             image_data = image_data.split(',', 1)[1]
@@ -186,7 +181,8 @@ async def predict_from_base64(request: Base64ImageRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing base64 image: {str(e)}")
 
-
+# Run the app
 if __name__ == "__main__":
     import uvicorn
+    #uvicorn used for running the app
     uvicorn.run(app, host="0.0.0.0", port=8000)

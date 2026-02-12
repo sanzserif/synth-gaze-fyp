@@ -1,4 +1,4 @@
-# Exclude PyTorch model (not needed - using ONNX)
+# Exclude PyTorch model
 backend/gaze_model.pth
 
 # Exclude local environments
@@ -6,9 +6,8 @@ backend/venv/
 backend/.venv/
 backend/__pycache__/
 
-# Exclude conversion script (only needed locally)
+# Exclude conversion script
 backend/convert_to_onnx.py
-backend/MODEL_PLACEHOLDER.txt
 
 # Node
 node_modules/
