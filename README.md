@@ -1,13 +1,13 @@
-# Eye Gaze Tracker Web Application
+# Project Synth-Gaze
 
-An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 model to predict where a user is looking based on webcam images or uploaded photos.
+An AI-powered eye gaze tracking web application that uses an ONNX-optimized ResNet-18 model to predict where a user is looking based on webcam images or uploaded photos.
 
 ## Architecture
 
-- **Frontend:** Next.js 14 (App Router) with TypeScript
-- **Backend:** Python FastAPI with PyTorch
+- **Frontend:** Next.js 15 (App Router) with TypeScript + shadcn/ui
+- **Backend:** Python FastAPI with ONNX Runtime
 - **Deployment:** Vercel (hybrid Next.js + Python)
-- **Model:** ResNet18 with custom head (outputs X, Y coordinates)
+- **Model:** ResNet-18 with custom head (outputs X, Y coordinates)
 
 ## Quick Start
 
@@ -15,7 +15,7 @@ An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 mod
 
 - Node.js 18+ and npm
 - Python 3.10+
-- Your trained `gaze_model.pth` file
+- Your trained `gaze_model.onnx` file (or `gaze_model.pth` for conversion)
 
 ### Backend Setup
 
@@ -36,8 +36,9 @@ An AI-powered eye gaze tracking web application that uses a PyTorch ResNet18 mod
    ```
 
 4. **Add your model file:**
-   - Place your `gaze_model.pth` file in the `backend/` directory
-   - The model should be a ResNet18 with modified fc layer: `nn.Linear(512, 2)`
+   - Place your `gaze_model.onnx` file in the `backend/` directory
+   - If you only have `gaze_model.pth`, run `python convert_to_onnx.py` to convert it
+   - The model should be a ResNet-18 with modified fc layer: `nn.Linear(512, 2)`
 
 5. **Run the backend:**
    ```bash
@@ -91,7 +92,7 @@ Health check endpoint
 {
   "status": "online",
   "model_loaded": true,
-  "device": "cpu"
+  "runtime": "onnxruntime"
 }
 ```
 
@@ -100,10 +101,10 @@ Detailed health check
 ```json
 {
   "status": "healthy",
-  "model_path": "/path/to/gaze_model.pth",
+  "model_path": "/path/to/gaze_model.onnx",
   "model_exists": true,
   "model_loaded": true,
-  "device": "cpu"
+  "runtime": "onnxruntime"
 }
 ```
 
@@ -138,20 +139,39 @@ Send base64-encoded image and get gaze prediction
 }
 ```
 
-## Model Requirements
+## Model Details
 
-Your `gaze_model.pth` file must:
-- Be a ResNet18 architecture
-- Have a modified final layer: `fc = nn.Linear(512, 2)`
-- Output two float values (X, Y coordinates)
-- Accept input images of size 64×64×3
-- Be trained with ImageNet normalization
+### Architecture
+- **Base Model:** ResNet-18 (pretrained on ImageNet)
+- **Modified Head:** `fc = nn.Linear(512, 2)` — outputs (X, Y) normalized coordinates
+- **Input:** 64×64×3 (RGB)
+- **Output:** 2 floats in [0, 1] range representing gaze position
+
+### Training Configuration
+- **Loss Function:** MSE (Mean Squared Error)
+- **Optimizer:** Adam (lr=0.001)
+- **Epochs:** 5
+- **Batch Size:** 128
+- **Transfer Learning:** ImageNet pretrained weights
+
+### Training Data
+- **Synthetic:** Unity-generated eye images (5,000 samples) with gaze vectors projected to screen coordinates
+- **Real:** ARGaze dataset (~2.6M samples from multiple participants and camera angles)
+- **Combined & capped** at 40,000 samples for training
+
+### Preprocessing Pipeline
+1. Resize → 64×64
+2. Grayscale → 3-channel RGB
+3. ToTensor [0, 1]
+4. Normalize (ImageNet: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+> **Note:** Unity synthetic data also applies `CenterCrop(300)` before resize during training.
 
 ## Customization
 
 ### Adjust Visualization Coordinates
 
-If your model outputs coordinates in a different range (e.g., pixel coordinates instead of normalized [0,1]), update the `getGazePosition` function in `app/page.tsx`:
+If your model outputs coordinates in a different range (e.g., pixel coordinates instead of normalized [0,1]), update the `getGazePosition` function in `components/gaze/gaze-visualization.tsx`:
 
 ```typescript
 const getGazePosition = () => {
@@ -180,14 +200,46 @@ Edit CSS variables in `app/globals.css`:
 }
 ```
 
+## Project Structure
+
+```
+├── app/                          # Next.js App Router
+│   ├── page.tsx                  # Main page (orchestrator)
+│   ├── layout.tsx                # Root layout
+│   └── globals.css               # Global styles + shadcn theme
+├── components/
+│   ├── gaze/                     # Gaze-specific components
+│   │   ├── input-panel.tsx       # Upload/webcam input
+│   │   ├── gaze-visualization.tsx # Gaze dot display
+│   │   ├── debug-panel.tsx       # Network debug overlay
+│   │   ├── info-cards.tsx        # Research info masonry
+│   │   ├── icons.tsx             # SVG icon components
+│   │   ├── types.ts              # Shared TypeScript types
+│   │   └── index.ts              # Barrel export
+│   └── ui/                       # shadcn/ui primitives
+├── backend/
+│   ├── main.py                   # FastAPI server (ONNX Runtime)
+│   ├── gaze_model.onnx           # ONNX model for deployment
+│   ├── gaze_model.pth            # PyTorch model (backup)
+│   ├── convert_to_onnx.py        # PyTorch → ONNX conversion
+│   ├── requirements.txt          # Python dependencies
+│   └── Research/                 # Training notebook & scripts
+│       ├── model_atmpt_1.ipynb   # Training notebook (Colab)
+│       ├── process_data.py       # Unity data preprocessing
+│       ├── process_argaze.py     # ARGaze single-session processing
+│       └── process_full_argaze.py # ARGaze full dataset crawler
+├── vercel.json                   # Vercel deployment config
+└── .vercelignore                 # Deployment exclusions
+```
+
 ## Troubleshooting
 
 ### Backend Issues
 
 **Model not loading:**
-- Ensure `gaze_model.pth` is in `backend/` directory
-- Check model architecture matches (ResNet18 with fc = Linear(512, 2))
-- Verify Python version is 3.12
+- Ensure `gaze_model.onnx` is in `backend/` directory
+- Check model architecture matches (ResNet-18 with fc = Linear(512, 2))
+- Verify Python version is 3.10+
 
 **Import errors:**
 - Activate virtual environment
@@ -208,9 +260,8 @@ Edit CSS variables in `app/globals.css`:
 ### Deployment Issues
 
 **Vercel function size exceeded:**
-- Use ONNX conversion (Option 2)
-- Deploy backend separately (Option 3)
-- Verify `--extra-index-url` for CPU-only torch
+- Ensure `.vercelignore` excludes `.pth` and `venv/`
+- Backend uses ONNX Runtime (lightweight) instead of PyTorch
 
 **API routes not working on Vercel:**
 - Check `vercel.json` configuration
@@ -223,10 +274,11 @@ MIT License - feel free to use this project for your own purposes.
 
 ## Acknowledgments
 
-- PyTorch team for the amazing ML framework
-- Next.js team for the excellent React framework
-- FastAPI for the blazing-fast Python API framework
+- PyTorch team for the ML framework
+- ONNX Runtime for efficient inference
+- Next.js and shadcn/ui for the frontend
+- FastAPI for the Python API framework
 
 ---
 
-Built with ❤️ using PyTorch, FastAPI, and Next.js by Nipun Kariyawasam
+Built with ❤️ using ONNX Runtime, FastAPI, Next.js, and shadcn/ui by Nipun Kariyawasam

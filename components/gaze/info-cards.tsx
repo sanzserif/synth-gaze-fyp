@@ -94,6 +94,72 @@ export function InfoCards() {
               <span>Output</span>
               <span className="text-foreground font-mono text-xs">(X, Y)</span>
             </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Transfer Learning</span>
+              <span className="text-foreground">ImageNet Pretrained</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Training Configuration */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle
+            className="text-sm tracking-normal"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            Training Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm space-y-1.5">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Loss Function</span>
+              <span className="text-foreground">MSE</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Optimizer</span>
+              <span className="text-foreground font-mono text-xs">
+                Adam (lr=0.001)
+              </span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Epochs</span>
+              <span className="text-foreground">5</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Batch Size</span>
+              <span className="text-foreground">128</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Training Data */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle
+            className="text-sm tracking-normal"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            Training Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm space-y-1.5">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Synthetic</span>
+              <span className="text-foreground">Unity (5K samples)</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Real</span>
+              <span className="text-foreground">ARGaze (~2.6M samples)</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Training Cap</span>
+              <span className="text-foreground font-mono text-xs">40,000</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -177,14 +243,6 @@ export function InfoCards() {
             <div className="flex justify-between text-muted-foreground">
               <span>Inference Engine</span>
               <span className="text-foreground">ONNX Runtime</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Model Size</span>
-              <span className="text-foreground font-mono text-xs">~94 KB</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Device</span>
-              <span className="text-foreground">CPU</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Normalization</span>

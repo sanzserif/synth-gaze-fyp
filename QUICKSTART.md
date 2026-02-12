@@ -3,10 +3,15 @@
 ## ⚡ Get Started in 3 Steps
 
 ### 1️⃣ Add Your Model File
-Place your `gaze_model.pth` file in the `backend/` directory:
+Place your `gaze_model.onnx` file in the `backend/` directory:
 ```
-backend/gaze_model.pth  <-- Put your model here
+backend/gaze_model.onnx  <-- Put your model here
 ```
+
+> If you only have `gaze_model.pth`, convert it first:
+> ```bash
+> cd backend && python convert_to_onnx.py
+> ```
 
 ### 2️⃣ Setup Backend
 ```bash
@@ -35,6 +40,7 @@ python main.py
 ```bash
 # From project root
 cp .env.example .env.local
+npm install
 npm run dev
 ```
 
@@ -44,10 +50,11 @@ npm run dev
 
 ## 🎯 What to Test
 
-1. ✅ Click "Webcam" mode → Grant permissions → Click "Capture & Analyze"
-2. ✅ Click "Upload Image" mode → Upload a photo → See prediction
+1. ✅ Click "Upload" → Upload a photo → See prediction
+2. ✅ Click "Webcam" mode → Grant permissions → Click "Capture & Analyze"
 3. ✅ Watch the red gaze dot appear on the visualization screen
-4. ✅ Check the X, Y coordinates below the visualization
+4. ✅ Check the X, Y coordinates in the badge
+5. ✅ Toggle the 🐛 debug panel to inspect API requests
 
 ---
 
@@ -64,9 +71,9 @@ vercel
 
 ## 📖 Full Documentation
 
-See [README.md](file:///d:/projects/academical/synthetic_core_fyp/README.md) for:
+See [README.md](README.md) for:
 - Detailed API documentation
-- ONNX conversion guide
+- Model architecture & training details
+- Project structure
 - Troubleshooting tips
 - Customization examples
-- Alternative deployment strategies
