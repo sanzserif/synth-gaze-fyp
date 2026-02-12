@@ -1,0 +1,15 @@
+# Eye Gaze Tracker Backend Requirements
+# Using ONNX Runtime instead of PyTorch to fit Vercel's 250MB limit
+
+# Core dependencies
+fastapi==0.115.0
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.0
+
+# Image processing
+Pillow==11.1.0
+numpy==1.26.4
+
+# ONNX Runtime for inference (~15MB vs ~700MB for PyTorch)
+onnxruntime==1.20.1
