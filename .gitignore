@@ -35,10 +35,7 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Model files (too large for git)
-backend/gaze_model.pth
-*.pth
-*.pt
+
 
 # Logs
 logs/
