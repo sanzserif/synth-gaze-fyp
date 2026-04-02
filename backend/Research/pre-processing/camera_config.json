@@ -1,0 +1,110 @@
+{
+  "outputPath": "D:/projects/academical/eyedata_FYP/3d/training_data/imgs",
+  "num_samples": 100,
+  "headless_mode": 1,
+
+  "motion_center": 1,
+  "camera_array_center": {
+    "x":  0.000,
+    "y": -0.013,
+    "z":  0.080,
+    "rx": -9.2,
+    "ry": 180.0,
+    "rz":  0.0
+  },
+
+  "camera_array_center_noise": {
+    "x":  0.012,
+    "y":  0.010,
+    "z":  0.030,
+    "rx": 8.0,
+    "ry": 8.0,
+    "rz": 4.0
+  },
+
+  "cameras": [
+    {
+      "name": "webcam",
+      "noise_distribution": "gaussian",
+      "is_orthographic": false,
+      "intrinsics": {
+        "fx": 700.0,
+        "fy": 700.0,
+        "cx": 320.0,
+        "cy": 240.0,
+        "w":  640,
+        "h":  480
+      },
+      "intrinsics_noise": {
+        "fx": 10.0,
+        "fy": 10.0,
+        "cx":  3.0,
+        "cy":  3.0,
+        "w":   0,
+        "h":   0
+      },
+      "extrinsics": {
+        "x":  0.0,
+        "y":  0.0,
+        "z":  0.0,
+        "rx": 0.0,
+        "ry": 0.0,
+        "rz": 0.0
+      }
+    }
+  ],
+
+  "lights": [
+    {
+      "name": "screen_glow",
+      "type": "point",
+      "array_mounted": 0,
+      "position":       { "x":  0.00, "y": -0.01, "z":  0.090 },
+      "position_noise": { "x":  0.045, "y":  0.030, "z":  0.040 },
+      "properties": {
+        "range":       2.5,
+        "intensity":   1.8,
+        "color":       { "r": 0.95, "g": 0.95, "b": 1.00 },
+        "shadows":     false,
+        "shadow_bias": 0.05
+      }
+    },
+    {
+      "name": "room_overhead",
+      "type": "point",
+      "array_mounted": 0,
+      "position":       { "x":  0.03, "y": -0.12, "z":  0.05 },
+      "position_noise": { "x":  0.08, "y":  0.06, "z":  0.06 },
+      "properties": {
+        "range":       3.0,
+        "intensity":   1.2,
+        "color":       { "r": 1.00, "g": 0.97, "b": 0.88 },
+        "shadows":     true,
+        "shadow_bias": 0.05
+      }
+    },
+    {
+      "name": "fill_light",
+      "type": "point",
+      "array_mounted": 0,
+      "position":       { "x": -0.06, "y": -0.03, "z":  0.07 },
+      "position_noise": { "x":  0.06, "y":  0.05, "z":  0.05 },
+      "properties": {
+        "range":       2.5,
+        "intensity":   0.7,
+        "color":       { "r": 1.00, "g": 0.95, "b": 0.85 },
+        "shadows":     false,
+        "shadow_bias": 0.05
+      }
+    }
+  ],
+
+  "eye_parameters": {
+    "pupil_size_range": { "min": 0.002, "max": 0.006 },
+    "iris_size_range":  { "min": 0.008, "max": 0.015 },
+    "default_yaw":   0.0,
+    "default_pitch": 0.0,
+    "yaw_noise":   25.0,
+    "pitch_noise": 35.0
+  }
+}
