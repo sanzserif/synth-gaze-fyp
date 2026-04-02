@@ -40,6 +40,7 @@ from typing import Optional
 CROP_SIZE    = 128   # final output resolution (px)
 PADDING_FRAC = 0.20  # padding fraction around eye bounding box
 GREY_THRESH  = 0.35  # UnityEyes2: reject frame if >35% is background grey
+VAR_THRESH   = 150.0 # reject crop if pixel variance < this (blank skin / no iris)
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -113,6 +114,18 @@ def parse_vec_str(vec_str: str) -> np.ndarray:
     """Parse UnityEyes2 vector string '(x, y, z, ...)' to numpy array."""
     clean = vec_str.replace('(', '').replace(')', '')
     return np.array([float(v.strip()) for v in clean.split(',')])
+
+
+def is_blank_patch(crop_bgr: np.ndarray) -> bool:
+    """Return True if the crop has no visible iris — low-contrast skin/background patch."""
+    gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    return float(gray.var()) < VAR_THRESH
+
+
+def to_grayscale_3ch(crop_bgr: np.ndarray) -> np.ndarray:
+    """Convert to grayscale and return as 3-channel BGR for JPEG saving."""
+    gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
+    return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
 
 def has_background_bleed(img: np.ndarray, threshold: float = GREY_THRESH) -> bool:
@@ -254,6 +267,11 @@ def process_unity(input_dir: str, output_dir: str, limit: int = 0):
             skipped_lm += 1
             continue
 
+        if is_blank_patch(crop):
+            skipped_lm += 1
+            continue
+
+        crop = to_grayscale_3ch(crop)
         out_name = f"unity_{base}.jpg"
         out_path = os.path.join(output_dir, out_name)
         cv2.imwrite(out_path, crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
@@ -277,112 +295,104 @@ def process_unity(input_dir: str, output_dir: str, limit: int = 0):
 
 
 # ---------------------------------------------------------------------------
-# MPIIGaze processor (Original format)
+# MPIIGaze processor (Normalized format)
 #
-# KEY FACTS discovered from inspecting the actual dataset:
-#   - Images are 1280x720, mostly black — eye strip pasted on black bg
-#   - annotation.txt has 41 columns, NO filename column, NO header
-#   - Row i (0-indexed) → image file f"{i+1:04d}.jpg"
-#   - Cols 26-28 = 3D gaze TARGET position (mm in camera space) — NOT a direction
-#   - Cols 35-37 = 3D right eye center (mm in camera space)
-#   - Cols 38-40 = 3D left  eye center (mm in camera space)
-#   - Gaze direction = normalize(target - eye_center)  ← correct formula
-#   - Cols 0-11  = right eye 2D landmark pixels (6 x,y pairs)
-#   - Cols 12-23 = left  eye 2D landmark pixels (6 x,y pairs)
+# Uses the pre-processed Normalized .mat files — no cropping needed.
+# Each day file (e.g. p00/day01.mat) contains:
+#   data['right']['image'] : (N, 36, 60) uint8 — perspective-normalised eye patch
+#   data['right']['gaze']  : (N, 3)      float — unit 3D gaze direction vector
+#   data['left']['image']  : same
+#   data['left']['gaze']   : same
+#
+# Left eye images are horizontally flipped and phi negated so sign convention
+# matches right eye and UnityEyes (gaze right → positive phi).
 # ---------------------------------------------------------------------------
 
 def process_mpiigaze(input_dir: str, output_dir: str, limit: int = 0):
+    import scipy.io as sio
+
     os.makedirs(output_dir, exist_ok=True)
     records = []
-    skipped_gaze = skipped_crop = skipped_anno = skipped_file = 0
+    skipped_gaze = skipped_mat = 0
     kept_total = 0
 
     participant_dirs = sorted([
         d for d in os.listdir(input_dir)
         if os.path.isdir(os.path.join(input_dir, d)) and d.startswith('p')
     ])
-    print(f"[MPIIGaze] Found {len(participant_dirs)} participants")
+    print(f"[MPIIGaze] Found {len(participant_dirs)} participants in {input_dir}")
 
     for p in participant_dirs:
         if limit > 0 and kept_total >= limit:
             break
-        p_dir    = os.path.join(input_dir, p)
-        day_dirs = sorted([
-            d for d in os.listdir(p_dir)
-            if os.path.isdir(os.path.join(p_dir, d)) and d.startswith('day')
+        p_dir = os.path.join(input_dir, p)
+        mat_files = sorted([
+            f for f in os.listdir(p_dir)
+            if f.endswith('.mat') and f.startswith('day')
         ])
 
-        for day in day_dirs:
+        for mat_name in mat_files:
             if limit > 0 and kept_total >= limit:
                 break
-            day_path  = os.path.join(p_dir, day)
-            anno_path = os.path.join(day_path, "annotation.txt")
-            if not os.path.exists(anno_path):
-                continue
+
+            mat_path = os.path.join(p_dir, mat_name)
+            day = os.path.splitext(mat_name)[0]   # e.g. "day01"
 
             try:
-                anno = pd.read_csv(anno_path, sep=' ', header=None)
-            except Exception:
-                skipped_anno += 1
+                mat  = sio.loadmat(mat_path)
+                # Nested structured array: mat['data'][0,0] → (right_struct, left_struct)
+                data = mat['data'][0, 0]
+            except Exception as e:
+                print(f"  WARNING: could not load {mat_path}: {e}")
+                skipped_mat += 1
                 continue
 
-            if anno.shape[1] != 41:
-                print(f"  WARNING: {anno_path} has {anno.shape[1]} cols, expected 41. Skipping.")
-                skipped_anno += 1
-                continue
+            for side_idx, side in enumerate(['right', 'left']):
+                if limit > 0 and kept_total >= limit:
+                    break
 
-            for row_idx, row in anno.iterrows():
-                # Row i (0-indexed) → image "{i+1:04d}.jpg"
-                img_name = f"{int(row_idx) + 1:04d}.jpg"
-                img_path = os.path.join(day_path, img_name)
-
-                if not os.path.exists(img_path):
-                    skipped_file += 1
+                try:
+                    side_data = data[side_idx][0, 0]
+                    images = side_data['image']   # (N, 36, 60) uint8
+                    gazes  = side_data['gaze']    # (N, 3) float64 unit vectors
+                except Exception as e:
+                    print(f"  WARNING: bad structure in {mat_path}/{side}: {e}")
+                    skipped_mat += 1
                     continue
 
-                img = cv2.imread(img_path)
-                if img is None:
-                    skipped_file += 1
-                    continue
+                n = images.shape[0]
+                for i in range(n):
+                    if limit > 0 and kept_total >= limit:
+                        break
 
-                # --- 3D gaze TARGET and eye CENTERS (mm in camera space) ---
-                target = np.array([row.iloc[26], row.iloc[27], row.iloc[28]])
-                r_eye  = np.array([row.iloc[35], row.iloc[36], row.iloc[37]])
-                l_eye  = np.array([row.iloc[38], row.iloc[39], row.iloc[40]])
+                    gx, gy, gz = gazes[i]
+                    theta, phi = direction_to_theta_phi(gx, gy, gz)
 
-                # Gaze direction = target position - eye center position
-                r_dir = target - r_eye
-                l_dir = target - l_eye
-
-                theta_r, phi_r = direction_to_theta_phi(*r_dir)
-                theta_l, phi_l = direction_to_theta_phi(*l_dir)
-
-                # --- 2D eye landmarks for cropping ---
-                # Right eye: cols 0-11 → 6 (x,y) pairs
-                r_pts = row.iloc[0:12].values.reshape(6, 2).astype(float)
-                # Left  eye: cols 12-23 → 6 (x,y) pairs
-                l_pts = row.iloc[12:24].values.reshape(6, 2).astype(float)
-
-                for side, pts, theta, phi in [
-                    ('right', r_pts, theta_r, phi_r),
-                    ('left',  l_pts, theta_l, phi_l)
-                ]:
                     if theta is None or not is_valid_gaze(theta, phi):
                         skipped_gaze += 1
                         continue
 
-                    crop = crop_from_points(img, pts)
-                    if crop is None:
-                        skipped_crop += 1
+                    # images[i] is (36, 60) grayscale stored as (H, W) uint8
+                    patch = images[i]
+                    if patch.ndim == 2:
+                        patch = cv2.cvtColor(patch, cv2.COLOR_GRAY2BGR)
+                    elif patch.shape[2] == 3:
+                        patch = cv2.cvtColor(patch, cv2.COLOR_RGB2BGR)
+
+                    # Flip left eye horizontally + negate phi to unify convention
+                    if side == 'left':
+                        patch = cv2.flip(patch, 1)
+                        phi   = -phi
+
+                    crop = cv2.resize(patch, (CROP_SIZE, CROP_SIZE),
+                                      interpolation=cv2.INTER_LANCZOS4)
+
+                    if is_blank_patch(crop):
+                        skipped_gaze += 1
                         continue
 
-                    # Mirror left eye image + negate phi so sign convention
-                    # matches right eye and UnityEyes
-                    if side == 'left':
-                        crop = cv2.flip(crop, 1)
-                        phi  = -phi
-
-                    out_name = f"mpii_{p}_{day}_{int(row_idx)+1:04d}_{side}.jpg"
+                    crop = to_grayscale_3ch(crop)
+                    out_name = f"mpii_{p}_{day}_{i+1:04d}_{side}.jpg"
                     out_path = os.path.join(output_dir, out_name)
                     cv2.imwrite(out_path, crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
 
@@ -395,19 +405,15 @@ def process_mpiigaze(input_dir: str, output_dir: str, limit: int = 0):
                         'participant': p
                     })
                     kept_total += 1
-                    if limit > 0 and kept_total >= limit:
-                        break
 
-            if len(records) % 5000 == 0 and len(records) > 0:
-                print(f"  kept={len(records)}  skip_gaze={skipped_gaze}  "
-                      f"skip_crop={skipped_crop}")
+            if kept_total % 5000 == 0 and kept_total > 0:
+                print(f"  kept={kept_total}  skip_gaze={skipped_gaze}")
 
     df = pd.DataFrame(records)
     csv_path = os.path.join(output_dir, "mpii_labels.csv")
     df.to_csv(csv_path, index=False)
     print(f"\n[MPIIGaze] Done. Kept={len(records)}")
-    print(f"  skip_gaze={skipped_gaze}  skip_crop={skipped_crop}  "
-          f"skip_anno={skipped_anno}  skip_file={skipped_file}")
+    print(f"  skip_gaze={skipped_gaze}  skip_mat={skipped_mat}")
     print(f"  CSV: {csv_path}")
     return df
 
