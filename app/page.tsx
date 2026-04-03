@@ -15,6 +15,10 @@ import type { GazePrediction, DebugLog } from "@/components/gaze";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
+function formatPredictionSummary(prediction: GazePrediction) {
+  return `Pitch ${prediction.thetaDegrees.toFixed(1)}°, yaw ${prediction.phiDegrees.toFixed(1)}°`;
+}
+
 export default function Home() {
   const [prediction, setPrediction] = useState<GazePrediction | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +61,7 @@ export default function Home() {
       }
 
       setPrediction(data);
-      toast.success(`Prediction received (${duration}ms)`);
+      toast.success(`${formatPredictionSummary(data)} (${duration}ms)`);
     } catch (err) {
       const duration = Math.round(performance.now() - start);
       const message =
@@ -80,7 +84,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto relative">
-      {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl md:text-5xl tracking-wider">
@@ -98,12 +101,10 @@ export default function Home() {
         </Button>
       </header>
 
-      {/* Debug Panel */}
       {debugOpen && (
         <DebugPanel logs={debugLogs} onClose={() => setDebugOpen(false)} />
       )}
 
-      {/* Main Content */}
       <div className="grid gap-6 lg:grid-cols-2">
         <InputPanel loading={loading} onImageCapture={handleImageCapture} />
         <GazeVisualization prediction={prediction} />
@@ -111,7 +112,6 @@ export default function Home() {
 
       <Separator className="my-8" />
 
-      {/* Information Cards */}
       <section>
         <h2 className="text-3xl tracking-wider mb-6">Research Information</h2>
         <InfoCards />

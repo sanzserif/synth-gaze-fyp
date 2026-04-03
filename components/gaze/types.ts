@@ -1,6 +1,15 @@
 export interface GazePrediction {
-  x: number;
-  y: number;
+  thetaNormalized: number;
+  phiNormalized: number;
+  thetaRadians: number;
+  phiRadians: number;
+  thetaDegrees: number;
+  phiDegrees: number;
+  vector: {
+    x: number;
+    y: number;
+    z: number;
+  };
 }
 
 export interface DebugLog {

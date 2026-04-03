@@ -1,13 +1,13 @@
 # Project Synth-Gaze
 
-An AI-powered eye gaze tracking web application that uses an ONNX-optimized ResNet-18 model to predict where a user is looking based on webcam images or uploaded photos.
+An AI-powered eye gaze tracking web application that uses an ONNX-optimized EfficientNet-B0 model to predict gaze angles from uploaded photos and render them as a 3D raycast view.
 
 ## Architecture
 
 - **Frontend:** Next.js 15 (App Router) with TypeScript + shadcn/ui
 - **Backend:** Python FastAPI with ONNX Runtime
 - **Deployment:** Vercel (hybrid Next.js + Python)
-- **Model:** ResNet-18 with custom head (outputs X, Y coordinates)
+- **Model:** EfficientNet-B0 with an angle-regression head (outputs theta and phi)
 
 ## Quick Start
 
@@ -15,7 +15,7 @@ An AI-powered eye gaze tracking web application that uses an ONNX-optimized ResN
 
 - Node.js 18+ and npm
 - Python 3.10+
-- Your trained `gaze_model.onnx` file (or `gaze_model.pth` for conversion)
+- Your exported ONNX model file
 
 ### Backend Setup
 
@@ -36,9 +36,9 @@ An AI-powered eye gaze tracking web application that uses an ONNX-optimized ResN
    ```
 
 4. **Add your model file:**
-   - Place your `gaze_model.onnx` file in the `backend/` directory
-   - If you only have `gaze_model.pth`, run `python convert_to_onnx.py` to convert it
-   - The model should be a ResNet-18 with modified fc layer: `nn.Linear(512, 2)`
+   - Place your ONNX model in `backend/Research/models/`
+   - The current backend expects `gaze_model_attempt2_epoch-18-03Apr0342h.onnx`
+   - If the filename changes, update `MODEL_PATH` in [backend/main.py](backend/main.py)
 
 5. **Run the backend:**
    ```bash
@@ -79,10 +79,9 @@ An AI-powered eye gaze tracking web application that uses an ONNX-optimized ResN
 ### Using the Application
 
 1. Open `http://localhost:3000` in your browser
-2. Choose between **Webcam** or **Upload Image** mode
-3. Grant camera permissions (for webcam mode)
-4. Click **"Capture & Analyze"** or upload an image
-5. View the predicted gaze point on the visualization screen
+2. Upload a face photo
+3. Wait for the ONNX backend to return the gaze angles
+4. View the predicted gaze ray and hit or miss result in the 3D visualization panel
 
 ## API Endpoints
 
@@ -109,20 +108,29 @@ Detailed health check
 ```
 
 ### `POST /predict`
-Upload an image file and get gaze prediction
+Upload an image file and get a gaze-angle prediction
 
 **Request:** FormData with `file` field
 
 **Response:**
 ```json
 {
-  "x": 0.4521,
-  "y": 0.3891
+   "thetaNormalized": -0.3088,
+   "phiNormalized": 0.0933,
+   "thetaRadians": -0.1348,
+   "phiRadians": 0.0570,
+   "thetaDegrees": -7.7210,
+   "phiDegrees": 3.2667,
+   "vector": {
+      "x": 0.0564,
+      "y": 0.1341,
+      "z": 0.9893
+   }
 }
 ```
 
 ### `POST /predict/base64`
-Send base64-encoded image and get gaze prediction
+Send a base64-encoded image and get a gaze-angle prediction
 
 **Request:**
 ```json
@@ -134,58 +142,56 @@ Send base64-encoded image and get gaze prediction
 **Response:**
 ```json
 {
-  "x": 0.4521,
-  "y": 0.3891
+   "thetaNormalized": -0.3088,
+   "phiNormalized": 0.0933,
+   "thetaRadians": -0.1348,
+   "phiRadians": 0.0570,
+   "thetaDegrees": -7.7210,
+   "phiDegrees": 3.2667,
+   "vector": {
+      "x": 0.0564,
+      "y": 0.1341,
+      "z": 0.9893
+   }
 }
 ```
 
 ## Model Details
 
 ### Architecture
-- **Base Model:** ResNet-18 (pretrained on ImageNet)
-- **Modified Head:** `fc = nn.Linear(512, 2)` — outputs (X, Y) normalized coordinates
-- **Input:** 64×64×3 (RGB)
-- **Output:** 2 floats in [0, 1] range representing gaze position
+- **Base Model:** EfficientNet-B0 (pretrained on ImageNet)
+- **Head:** Dropout → Linear → ReLU → Dropout → Linear → `Tanh()`
+- **Input:** 128×128×3 (grayscale eye crop expanded back to RGB)
+- **Output:** 2 floats in `[-1, 1]` representing normalized `theta` and `phi`
 
 ### Training Configuration
-- **Loss Function:** MSE (Mean Squared Error)
-- **Optimizer:** Adam (lr=0.001)
-- **Epochs:** 5
-- **Batch Size:** 128
+- **Loss Function:** Huber
+- **Optimizer:** AdamW (`lr=3e-4`)
+- **Epochs:** 18
+- **Batch Size:** 64
 - **Transfer Learning:** ImageNet pretrained weights
 
 ### Training Data
-- **Synthetic:** Unity-generated eye images (5,000 samples) with gaze vectors projected to screen coordinates
-- **Real:** ARGaze dataset (~2.6M samples from multiple participants and camera angles)
-- **Combined & capped** at 40,000 samples for training
+- **Synthetic:** UnityEyes2 eye images
+- **Real:** MPIIGaze right-eye crops
+- **Combined cap:** 12K synthetic + 12K real for the main training run
 
 ### Preprocessing Pipeline
-1. Resize → 64×64
+1. Resize → 128×128
 2. Grayscale → 3-channel RGB
 3. ToTensor [0, 1]
 4. Normalize (ImageNet: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-> **Note:** Unity synthetic data also applies `CenterCrop(300)` before resize during training.
-
 ## Customization
 
-### Adjust Visualization Coordinates
+### Adjust Raycast Geometry
 
-If your model outputs coordinates in a different range (e.g., pixel coordinates instead of normalized [0,1]), update the `getGazePosition` function in `components/gaze/gaze-visualization.tsx`:
+If the virtual hardware geometry changes, update the screen constants in [components/gaze/gaze-visualization.tsx](components/gaze/gaze-visualization.tsx):
 
 ```typescript
-const getGazePosition = () => {
-  if (!prediction) return { left: '50%', top: '50%' }
-  
-  // Example: If model outputs pixel coordinates for 1920x1080
-  const normalizedX = prediction.x / 1920
-  const normalizedY = prediction.y / 1080
-  
-  return {
-    left: `${normalizedX * 100}%`,
-    top: `${normalizedY * 100}%`
-  }
-}
+const SCREEN_DISTANCE = 60
+const SCREEN_WIDTH = 50
+const SCREEN_HEIGHT = SCREEN_WIDTH / (16 / 9)
 ```
 
 ### Change Color Scheme
@@ -209,8 +215,8 @@ Edit CSS variables in `app/globals.css`:
 │   └── globals.css               # Global styles + shadcn theme
 ├── components/
 │   ├── gaze/                     # Gaze-specific components
-│   │   ├── input-panel.tsx       # Upload/webcam input
-│   │   ├── gaze-visualization.tsx # Gaze dot display
+│   │   ├── input-panel.tsx       # Upload-only image input
+│   │   ├── gaze-visualization.tsx # 3D raycast scene
 │   │   ├── debug-panel.tsx       # Network debug overlay
 │   │   ├── info-cards.tsx        # Research info masonry
 │   │   ├── icons.tsx             # SVG icon components

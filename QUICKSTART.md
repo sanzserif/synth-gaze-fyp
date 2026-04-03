@@ -3,15 +3,12 @@
 ## ⚡ Get Started in 3 Steps
 
 ### 1️⃣ Add Your Model File
-Place your `gaze_model.onnx` file in the `backend/` directory:
+Place your ONNX file in the `backend/Research/models/` directory:
 ```
-backend/gaze_model.onnx  <-- Put your model here
+backend/Research/models/gaze_model_attempt2_epoch-18-03Apr0342h.onnx
 ```
 
-> If you only have `gaze_model.pth`, convert it first:
-> ```bash
-> cd backend && python convert_to_onnx.py
-> ```
+> If the filename is different, update `MODEL_PATH` in [backend/main.py](backend/main.py).
 
 ### 2️⃣ Setup Backend
 ```bash
@@ -50,11 +47,11 @@ npm run dev
 
 ## 🎯 What to Test
 
-1. ✅ Click "Upload" → Upload a photo → See prediction
-2. ✅ Click "Webcam" mode → Grant permissions → Click "Capture & Analyze"
-3. ✅ Watch the red gaze dot appear on the visualization screen
-4. ✅ Check the X, Y coordinates in the badge
-5. ✅ Toggle the 🐛 debug panel to inspect API requests
+1. ✅ Upload a face photo
+2. ✅ Watch the 3D raycast scene update with the predicted gaze direction
+3. ✅ Confirm the screen target changes between hit and miss when angles move out of bounds
+4. ✅ Check the pitch and yaw values in the badge and top status cards
+5. ✅ Toggle the debug panel to inspect the new API response payload
 
 ---
 

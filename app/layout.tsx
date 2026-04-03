@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Synth-Gaze",
   description:
-    "Bi-Directional Coordinates and Eye-Gaze prediction on Synthetic data-based eye gaze tracking",
+    "CNN-Based 3D Gaze Estimation Using Synthetic Data Augmentation",
   keywords: [
     "eye tracking",
     "gaze detection",

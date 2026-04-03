@@ -6,7 +6,6 @@ import { GithubIcon } from "./icons";
 export function InfoCards() {
   return (
     <div className="masonry">
-      {/* Research Details */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -18,8 +17,8 @@ export function InfoCards() {
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-sm font-medium">
-            Bi-Directional Coordinates and Eye-Gaze Prediction on Synthetic
-            Data-Based Eye Gaze Tracking
+            Vector-based eye-gaze estimation on synthetic and real eye data,
+            deployed as an ONNX-backed web application.
           </p>
           <Separator />
           <div className="text-sm text-muted-foreground space-y-1">
@@ -31,7 +30,6 @@ export function InfoCards() {
         </CardContent>
       </Card>
 
-      {/* Student Details */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -62,7 +60,6 @@ export function InfoCards() {
         </CardContent>
       </Card>
 
-      {/* Model Architecture */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -76,33 +73,32 @@ export function InfoCards() {
           <div className="text-sm space-y-1.5">
             <div className="flex justify-between text-muted-foreground">
               <span>Base Model</span>
-              <span className="text-foreground">ResNet-18</span>
+              <span className="text-foreground">EfficientNet-B0</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Head</span>
               <span className="text-foreground font-mono text-xs">
-                Linear(512, 2)
+                MLP → Tanh(2)
               </span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Input Size</span>
               <span className="text-foreground font-mono text-xs">
-                64 × 64 × 3
+                128 × 128 × 3
               </span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Output</span>
-              <span className="text-foreground font-mono text-xs">(X, Y)</span>
+              <span className="text-foreground font-mono text-xs">(theta, phi)</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Transfer Learning</span>
-              <span className="text-foreground">ImageNet Pretrained</span>
+              <span>Export</span>
+              <span className="text-foreground">ONNX Runtime</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Training Configuration */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -116,27 +112,26 @@ export function InfoCards() {
           <div className="text-sm space-y-1.5">
             <div className="flex justify-between text-muted-foreground">
               <span>Loss Function</span>
-              <span className="text-foreground">MSE</span>
+              <span className="text-foreground">Huber</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Optimizer</span>
               <span className="text-foreground font-mono text-xs">
-                Adam (lr=0.001)
+                AdamW (lr=3e-4)
               </span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Epochs</span>
-              <span className="text-foreground">5</span>
+              <span className="text-foreground">18</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Batch Size</span>
-              <span className="text-foreground">128</span>
+              <span className="text-foreground">64</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Training Data */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -150,21 +145,20 @@ export function InfoCards() {
           <div className="text-sm space-y-1.5">
             <div className="flex justify-between text-muted-foreground">
               <span>Synthetic</span>
-              <span className="text-foreground">Unity (5K samples)</span>
+              <span className="text-foreground">UnityEyes2</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Real</span>
-              <span className="text-foreground">ARGaze (~2.6M samples)</span>
+              <span className="text-foreground">MPIIGaze</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Training Cap</span>
-              <span className="text-foreground font-mono text-xs">40,000</span>
+              <span>Training Mix</span>
+              <span className="text-foreground font-mono text-xs">12K + 12K</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Preprocessing Pipeline */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -180,7 +174,7 @@ export function InfoCards() {
               <Badge variant="outline" className="text-[10px] shrink-0">
                 1
               </Badge>
-              <span className="text-muted-foreground">Resize → 64×64</span>
+              <span className="text-muted-foreground">Resize → 128×128</span>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-[10px] shrink-0">
@@ -206,7 +200,6 @@ export function InfoCards() {
         </CardContent>
       </Card>
 
-      {/* Stack */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -222,13 +215,13 @@ export function InfoCards() {
             <Badge variant="secondary">TypeScript</Badge>
             <Badge variant="secondary">FastAPI</Badge>
             <Badge variant="secondary">ONNX Runtime</Badge>
-            <Badge variant="secondary">ResNet-18</Badge>
+            <Badge variant="secondary">Three.js</Badge>
+            <Badge variant="secondary">EfficientNet-B0</Badge>
             <Badge variant="secondary">Vercel</Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Runtime */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle
@@ -245,9 +238,15 @@ export function InfoCards() {
               <span className="text-foreground">ONNX Runtime</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Normalization</span>
+              <span>Raycast View</span>
               <span className="text-foreground font-mono text-xs">
-                ImageNet
+                Browser-side 3D
+              </span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Image Input</span>
+              <span className="text-foreground font-mono text-xs">
+                Upload only
               </span>
             </div>
           </div>
