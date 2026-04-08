@@ -17,8 +17,8 @@ export function InfoCards() {
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-sm font-medium">
-            Vector-based eye-gaze estimation on synthetic and real eye data,
-            deployed as an ONNX-backed web application.
+            Vector-based 3D eye-gaze estimation model created on synthetic and real eye data,
+            deployed as an ONNX-backed web application, EfficientNet-B0 Model.
           </p>
           <Separator />
           <div className="text-sm text-muted-foreground space-y-1">
@@ -76,12 +76,6 @@ export function InfoCards() {
               <span className="text-foreground">EfficientNet-B0</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Head</span>
-              <span className="text-foreground font-mono text-xs">
-                MLP → Tanh(2)
-              </span>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
               <span>Input Size</span>
               <span className="text-foreground font-mono text-xs">
                 128 × 128 × 3
@@ -93,7 +87,7 @@ export function InfoCards() {
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Export</span>
-              <span className="text-foreground">ONNX Runtime</span>
+              <span className="text-foreground"> EfficientNet-B0 → ONNX Runtime</span>
             </div>
           </div>
         </CardContent>

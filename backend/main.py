@@ -1,5 +1,3 @@
-"""FastAPI backend for the Synth-Gaze ONNX inference API."""
-
 import base64
 import io
 import math
@@ -76,7 +74,7 @@ def load_model():
             model_input_width = width
 
     print(
-        "✓ ONNX model loaded successfully from "
+        "ONNX model loaded"
         f"{MODEL_PATH} ({model_input_width}x{model_input_height})"
     )
 
