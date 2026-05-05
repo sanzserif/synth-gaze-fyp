@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,10 +146,18 @@ export function InputPanel({ loading, onImageCapture }: InputPanelProps) {
                   variant="outline"
                   className="absolute top-2 left-2 text-[10px] pointer-events-none border-amber-400/60 text-amber-300"
                 >
-                  No face detected and no right eye cropped — Proceed with Caution!
+                  No eye detected
                 </Badge>
               )}
             </div>
+          )}
+          {detectionState === "passthrough" && (
+            <Alert variant="warning">
+              <AlertTitle>No eye detected</AlertTitle>
+              <AlertDescription>
+                This image may not contain an eye, so the model may predict random gaze vectors. Proceed with accepting the limitation.
+              </AlertDescription>
+            </Alert>
           )}
           {(detectionState === "cropped" || detectionState === "passthrough") && (
             <Button onClick={handleAnalyze} disabled={loading} className="w-full">
